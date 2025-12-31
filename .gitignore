@@ -7,9 +7,8 @@ __pycache__/
 node_modules/
 dist/
 
-# Data
-data/raw/
-*.csv
+# Data(datasets, videos, large files)
+data/
 
 # OS
 .DS_Store

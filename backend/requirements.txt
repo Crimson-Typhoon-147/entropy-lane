@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+
+# Numerical & entropy analysis
+numpy
+scipy
+
+# Video & image processing
+opencv-python
+Pillow
+
+# Cryptography
+cryptography
+
