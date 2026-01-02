@@ -1,11 +1,10 @@
+# crypto/key_derivation.py
+
 import hashlib
 
-def derive_key(entropy_blocks, key_size=32):
+def derive_aes_key(entropy_bytes: bytes, key_size: int = 32) -> bytes:
     """
-    Derive a symmetric key from conditioned entropy blocks.
-    AES-256 requires 32 bytes.
+    Derive a fixed-length AES key from entropy bytes.
+    Default: 32 bytes = AES-256
     """
-    combined = "".join(entropy_blocks).encode()
-    digest = hashlib.sha256(combined).digest()
-
-    return digest[:key_size]
+    return hashlib.sha256(entropy_bytes).digest()[:key_size]

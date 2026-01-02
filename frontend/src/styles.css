@@ -1,0 +1,191 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1f1f1f;
+}
+
+
+.app-container {
+  display: flex;
+  width: 1200px;
+  height: 90vh;
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+
+.chat-window {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  background: #f0f0f0;
+}
+
+.chat-header {
+  padding: 10px;
+  background: #075e54;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.secure-badge {
+  font-size: 0.9rem;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: #e5ddd5;
+}
+
+.empty-chat {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+
+.message-bubble {
+  padding: 8px 12px;
+  margin: 6px 0;
+  max-width: 65%;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #000;
+}
+
+.message-bubble.me {
+  background: #dcf8c6;
+  margin-left: auto;
+}
+
+.message-bubble.other {
+  background: #ffffff;
+  margin-right: auto;
+}
+
+
+.input-bar {
+  display: flex;
+  padding: 10px;
+  background: white;
+}
+
+.input-bar input {
+  flex: 1;
+  padding: 8px;
+}
+
+.input-bar button {
+  margin-left: 5px;
+}
+
+.security-panel {
+  flex: 1;
+  padding: 20px;
+  background: #ffffff;
+  border-left: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+/* Headings */
+.security-panel h4 {
+  margin-top: 0;
+  color: #075e54;
+  font-weight: bold;
+}
+
+.security-panel h5 {
+  margin-top: 15px;
+  margin-bottom: 5px;
+  color: #222;
+}
+
+/* Text */
+.security-panel p {
+  color: #222;
+  margin: 6px 0;
+}
+
+/* List items */
+.security-panel ul {
+  padding-left: 20px;
+}
+
+.security-panel li {
+  color: #222;
+  margin: 5px 0;
+}
+/* ============================= */
+/* Chat message container */
+/* ============================= */
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Base message bubble */
+.message {
+  max-width: 65%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Sent message (YOU) */
+.message.me {
+  align-self: flex-end;
+  background-color: #d1f5d3;
+  color: #1f3d1f;
+  text-align: left;
+}
+
+/* Received message (OTHER) */
+.message.other {
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #222;
+  border: 1px solid #ddd;
+}
+
+/* ============================= */
+/* Encryption details */
+/* ============================= */
+
+.details-btn {
+  margin-top: 6px;
+  font-size: 12px;
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  padding: 0;
+}
+
+.encryption-details {
+  margin-top: 6px;
+  padding: 8px;
+  background-color: #f4f4f4;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #333;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.encryption-details p {
+  margin: 2px 0;
+}
