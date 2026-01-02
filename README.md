@@ -105,7 +105,9 @@ This is an intentional design decision due to:
 3. Start the backend:
 cd backend
 uvicorn api.main:app --reload
-▶️ How to Run the Project
+-----
+
+## ▶️ How to Run the Project
 Backend
 cd backend
 source venv/bin/activate
@@ -118,8 +120,8 @@ npm run dev
 
 
 Open the browser at the displayed local URL.
-
-🔐 Security Design Notes
+----
+## 🔐 Security Design Notes
 
 Each message consumes fresh entropy
 
@@ -130,12 +132,12 @@ AES-256-GCM ensures confidentiality and integrity
 Nonce and ciphertext are exposed only for demonstration
 
 Secret keys and raw entropy are never revealed
-
-📌 Project Status
+----
+## 📌 Project Status
 
 🚧 Under active development
-
-Future enhancements include:
+---
+## Future enhancements include:
 
 Live entropy dashboards
 
