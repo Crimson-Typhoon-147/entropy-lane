@@ -2,46 +2,76 @@ import { useEffect, useState, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 import InputBar from "./InputBar";
 
+// -------------------------------
+// Utils
+// -------------------------------
 function generateClientId() {
   return "client-" + Math.random().toString(36).slice(2);
 }
 
-const ROOM_ID = "entropy-lane-room"; // shared by both users
+// Shared room
+const ROOM_ID = "entropy-lane-room";
+
+// Backend base URL (LOCAL / CLOUDFLARE / PROD)
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 function ChatWindow() {
   const [messages, setMessages] = useState([]);
   const [clientId] = useState(generateClientId);
   const lastTsRef = useRef(0);
 
+  // -------------------------------
+  // SEND MESSAGE
+  // -------------------------------
   const sendMessage = async (text) => {
     if (!text.trim()) return;
 
-    setMessages((p) => [...p, { text, sender: "me" }]);
+    // Optimistic UI
+    setMessages((prev) => [...prev, { text, sender: "me" }]);
 
-    await fetch("http://10.25.163.201:8000/send_message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        roomId: ROOM_ID,
-        senderId: clientId,
-        message: text,
-      }),
-    });
+    try {
+      await fetch(`${API_BASE}/send_message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: ROOM_ID,
+          senderId: clientId,
+          message: text,
+        }),
+      });
+    } catch (err) {
+      console.error("Send failed:", err);
+    }
   };
 
+  // -------------------------------
+  // RECEIVE MESSAGE (POLLING)
+  // -------------------------------
   useEffect(() => {
     const poll = setInterval(async () => {
-      const res = await fetch(
-        `http://10.25.163.201:8000/receive_message?roomId=${ROOM_ID}&clientId=${clientId}&lastTs=${lastTsRef.current}`
-      );
+      try {
+        const res = await fetch(
+          `${API_BASE}/receive_message?roomId=${ROOM_ID}&clientId=${clientId}&lastTs=${lastTsRef.current}`
+        );
 
-      const data = await res.json();
+        if (!res.ok) return;
 
-      if (data.messages.length) {
-        data.messages.forEach((m) => {
-          lastTsRef.current = Math.max(lastTsRef.current, m.ts);
-          setMessages((p) => [...p, { text: m.text, sender: "other" }]);
-        });
+        const data = await res.json();
+
+        if (data.messages && data.messages.length) {
+          setMessages((prev) => {
+            const updated = [...prev];
+
+            data.messages.forEach((m) => {
+              lastTsRef.current = Math.max(lastTsRef.current, m.ts);
+              updated.push({ text: m.text, sender: "other" });
+            });
+
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error("Polling failed:", err);
       }
     }, 1500);
 
@@ -50,7 +80,10 @@ function ChatWindow() {
 
   return (
     <div className="chat-window">
-      <h3>EntropyLane Chat</h3>
+      <div className="chat-header">
+        <h3>EntropyLane</h3>
+        <span className="secure-badge">🔒 Secure Session</span>
+      </div>
 
       <div className="chat-messages">
         {messages.map((m, i) => (
