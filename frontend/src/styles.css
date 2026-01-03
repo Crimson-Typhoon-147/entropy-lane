@@ -228,3 +228,18 @@ body {
 .encryption-details p {
   margin: 3px 0;
 }
+@media (max-width: 768px) {
+  .app-container {
+    width: 100vw;
+    height: 100vh;
+    flex-direction: column;
+  }
+
+  .security-panel {
+    display: none;
+  }
+
+  .message {
+    max-width: 85%;
+  }
+}

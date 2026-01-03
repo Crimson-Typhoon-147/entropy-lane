@@ -1,12 +1,26 @@
 import { useState } from "react";
 
-function MessageBubble({ text, sender, meta }) {
+function MessageBubble({ text, sender, name, meta }) {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
     <div className={`message ${sender}`}>
+      {/* Sender name */}
+      {sender === "other" && name && (
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#60a5fa",
+            marginBottom: "4px",
+          }}
+        >
+          {name}
+        </div>
+      )}
+
       <p>{text}</p>
 
+      {/* Encryption metadata (optional) */}
       {meta && (
         <>
           <button

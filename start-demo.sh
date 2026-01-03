@@ -81,7 +81,7 @@ if [ -z "$FRONTEND_URL" ]; then
   cleanup
 fi
 
-# ---------------- DONE ----------------
+# ---------------- QR DISPLAY ONLY ----------------
 echo ""
 echo "=========================================="
 echo "✅ DEMO READY"
@@ -89,8 +89,14 @@ echo "🌍 Open this URL on ANY DEVICE:"
 echo ""
 echo "👉  $FRONTEND_URL"
 echo ""
-echo "=========================================="
+echo "📱 Scan this QR to join instantly:"
 echo ""
+
+# Terminal-only QR (no file saved)
+qrencode -t ANSIUTF8 "$FRONTEND_URL"
+
+echo ""
+echo "=========================================="
 echo "Press Ctrl+C to stop everything."
 
 wait

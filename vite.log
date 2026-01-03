@@ -4,7 +4,7 @@
 
 Port 5173 is in use, trying another one...
 
-  VITE v7.3.0  ready in 170 ms
+  VITE v7.3.0  ready in 165 ms
 
   ➜  Local:   http://localhost:5174/
-  ➜  Network: use --host to expose
+  ➜  Network: http://10.25.163.201:5174/
