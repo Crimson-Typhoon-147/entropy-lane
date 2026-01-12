@@ -57,7 +57,7 @@ Encrypted Messaging (AES-256-GCM)
 ---
 
 ## 🧰 Tech Stack
-
+--
 ### Backend
 - Python
 - FastAPI
@@ -73,7 +73,7 @@ Encrypted Messaging (AES-256-GCM)
 
 ---
 
-## 📹 Demo Video
+📹 Demo Video
 
 A short demo showcasing:
 - Traffic-based entropy generation
@@ -81,10 +81,9 @@ A short demo showcasing:
 - Different ciphertext for identical messages
 - One-time entropy consumption
 
----
------
-##▶️ How to Run EntropyLane (Actual Workflow)
 
+▶️ How to Run EntropyLane (Actual Workflow)
+----
 EntropyLane consists of three coordinated parts:
 
 Backend (Entropy extraction + crypto engine)
@@ -92,9 +91,9 @@ Backend (Entropy extraction + crypto engine)
 Frontend (Secure chat UI)
 
 Cloudflare Tunnel (External access for demo)
----
-##🧩 Prerequisites
 
+🧩 Prerequisites
+--
 Linux / Kali / Ubuntu (recommended)
 
 Python 3.10+
@@ -104,10 +103,10 @@ Node.js 18+
 npm
 
 A traffic video file (entropy source)
+
+
+📁 Entropy Source Setup (Mandatory)
 ----
-
-##📁 Entropy Source Setup (Mandatory)
-
 ⚠️ Traffic video is NOT included in this repository.
 
 This is intentional due to:
@@ -133,7 +132,7 @@ Place it at:
 backend/data/video/<your_video>.mp4
 
 🔐 Step 1: Start the Backend (Entropy Engine)
-
+---
 Navigate to the backend directory:
 
 cd backend
@@ -171,7 +170,7 @@ Backend is ready to serve encrypted messaging requests
 Backend is powered by FastAPI.
 
 💬 Step 2: Start the Frontend (Chat Interface)
-
+----
 Open a new terminal, then:
 
 cd frontend
@@ -186,7 +185,7 @@ You will see a local development URL (example):
 http://localhost:5173
 
 🌐 Step 3: Enable Cloudflare Tunneling (Demo Access)
-
+--
 For demo and external access, EntropyLane uses Cloudflare Tunnel.
 
 From the project root directory:
@@ -206,8 +205,8 @@ Avoids port forwarding or public IP exposure
 
 Tunneling is handled via Cloudflare.
 
-##🔎 What the Demo Shows
-
+🔎 What the Demo Shows
+---
 Real-time entropy consumption
 
 AES-256-GCM encryption per message
@@ -217,9 +216,9 @@ Different ciphertext for identical plaintext
 One-time entropy usage (no reuse)
 
 Visible nonce & ciphertext (for demonstration only)
------
-##🔐 Security Design Notes
 
+🔐 Security Design Notes
+--
 Each message consumes fresh entropy
 
 No entropy block is ever reused
@@ -230,24 +229,11 @@ Raw entropy and secret keys are never exposed
 
 Nonce and ciphertext visibility is strictly for demo transparency
 
-----
-## 🔐 Security Design Notes
-
-Each message consumes fresh entropy
-
-No entropy block is reused
-
-AES-256-GCM ensures confidentiality and integrity
-
-Nonce and ciphertext are exposed only for demonstration
-
-Secret keys and raw entropy are never revealed
-----
-## 📌 Project Status
-
+ 📌 Project Status
+--
 🚧 Under active development
 ---
-## Future enhancements include:
+ Future enhancements include:
 
 Live entropy dashboards
 
