@@ -83,43 +83,154 @@ A short demo showcasing:
 
 ---
 
-## 📹 Entropy Source Setup (Required to Run)
+▶️ How to Run EntropyLane (Actual Workflow)
 
-⚠️ **Traffic video data is NOT included in this repository.**
+EntropyLane consists of three coordinated parts:
 
-This is an intentional design decision due to:
-- Dataset size
-- Licensing constraints
-- Cryptographic best practices (entropy sources should not be fixed or shipped)
+Backend (Entropy extraction + crypto engine)
 
-### How to provide an entropy source:
+Frontend (Secure chat UI)
 
-1. Obtain **any continuous traffic video**:
-   - Fixed camera
-   - Visible vehicle movement
-   - 5–10 minutes recommended
+Cloudflare Tunnel (External access for demo)
 
-2. Place the video at:
-   backend/data/video/<your_video.mp4>
-   
-3. Start the backend:
+🧩 Prerequisites
+
+Linux / Kali / Ubuntu (recommended)
+
+Python 3.10+
+
+Node.js 18+
+
+npm
+
+A traffic video file (entropy source)
+
+📁 Entropy Source Setup (Mandatory)
+
+⚠️ Traffic video is NOT included in this repository.
+
+This is intentional due to:
+
+Dataset size
+
+Licensing constraints
+
+Cryptographic correctness (entropy sources must not be static or shipped)
+
+Provide your own entropy source:
+
+Obtain any continuous traffic video
+
+Fixed camera
+
+Visible vehicle motion
+
+5–10 minutes recommended
+
+Place it at:
+
+backend/data/video/<your_video>.mp4
+
+🔐 Step 1: Start the Backend (Entropy Engine)
+
+Navigate to the backend directory:
+
 cd backend
-uvicorn api.main:app --reload
------
 
-## ▶️ How to Run the Project
-Backend
-cd backend
+
+Activate the virtual environment:
+
 source venv/bin/activate
-uvicorn api.main:app --reload
 
-Frontend
+
+Start the API server:
+
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+✅ Expected Backend Output
+[INIT] Entropy blocks loaded     : 84
+[INIT] Entropy per block         : 512 bits
+[INIT] NIST SP 800-22 compliance : PASS
+INFO:     Started server process [PID]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000
+
+
+This confirms:
+
+Traffic entropy has been successfully extracted
+
+Bias conditioning is complete
+
+Entropy passes NIST SP 800-22
+
+Backend is ready to serve encrypted messaging requests
+
+Backend is powered by FastAPI.
+
+💬 Step 2: Start the Frontend (Chat Interface)
+
+Open a new terminal, then:
+
 cd frontend
 npm install
 npm run dev
 
 
-Open the browser at the displayed local URL.
+The frontend is built using React.
+
+You will see a local development URL (example):
+
+http://localhost:5173
+
+
+Open this URL in your browser.
+
+🌐 Step 3: Enable Cloudflare Tunneling (Demo Access)
+
+For demo and external access, EntropyLane uses Cloudflare Tunnel.
+
+From the project root directory:
+
+cd ..
+./start-demo.sh
+
+
+This script:
+
+Creates a secure Cloudflare tunnel
+
+Exposes backend + frontend externally
+
+Avoids port forwarding or public IP exposure
+
+Tunneling is handled via Cloudflare.
+
+🔎 What the Demo Shows
+
+Real-time entropy consumption
+
+AES-256-GCM encryption per message
+
+Different ciphertext for identical plaintext
+
+One-time entropy usage (no reuse)
+
+Visible nonce & ciphertext (for demonstration only)
+
+🔐 Security Design Notes
+
+Each message consumes fresh entropy
+
+No entropy block is ever reused
+
+AES-256-GCM ensures confidentiality + integrity
+
+Raw entropy and secret keys are never exposed
+
+Nonce and ciphertext visibility is strictly for demo transparency
+
 ----
 ## 🔐 Security Design Notes
 
