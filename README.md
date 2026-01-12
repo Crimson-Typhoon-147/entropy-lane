@@ -82,8 +82,8 @@ A short demo showcasing:
 - One-time entropy consumption
 
 ---
-
-▶️ How to Run EntropyLane (Actual Workflow)
+-----
+##▶️ How to Run EntropyLane (Actual Workflow)
 
 EntropyLane consists of three coordinated parts:
 
@@ -92,8 +92,8 @@ Backend (Entropy extraction + crypto engine)
 Frontend (Secure chat UI)
 
 Cloudflare Tunnel (External access for demo)
-
-🧩 Prerequisites
+---
+##🧩 Prerequisites
 
 Linux / Kali / Ubuntu (recommended)
 
@@ -104,8 +104,9 @@ Node.js 18+
 npm
 
 A traffic video file (entropy source)
+----
 
-📁 Entropy Source Setup (Mandatory)
+##📁 Entropy Source Setup (Mandatory)
 
 ⚠️ Traffic video is NOT included in this repository.
 
@@ -184,9 +185,6 @@ You will see a local development URL (example):
 
 http://localhost:5173
 
-
-Open this URL in your browser.
-
 🌐 Step 3: Enable Cloudflare Tunneling (Demo Access)
 
 For demo and external access, EntropyLane uses Cloudflare Tunnel.
@@ -196,6 +194,7 @@ From the project root directory:
 cd ..
 ./start-demo.sh
 
+Open the final URL in the browser or scan the QR code generated.
 
 This script:
 
@@ -207,7 +206,7 @@ Avoids port forwarding or public IP exposure
 
 Tunneling is handled via Cloudflare.
 
-🔎 What the Demo Shows
+##🔎 What the Demo Shows
 
 Real-time entropy consumption
 
@@ -218,8 +217,8 @@ Different ciphertext for identical plaintext
 One-time entropy usage (no reuse)
 
 Visible nonce & ciphertext (for demonstration only)
-
-🔐 Security Design Notes
+-----
+##🔐 Security Design Notes
 
 Each message consumes fresh entropy
 
