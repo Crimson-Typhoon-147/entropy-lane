@@ -1,20 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import numpy as np
 import hashlib
 import time
-import math
-from collections import Counter
 
-# ---------- Entropy pipeline imports ----------
-from entropy.video_loader import load_video_frames
-from entropy.frame_preprocess import preprocess_frames
-from entropy.feature_extract import extract_motion_features
-from entropy.window_entropy import compute_entropy_windows
-from entropy.entropy_pool import condition_entropy
+# 🔥 Entropy system
+from entropy.entropy_mixer import mix_entropy
 
-# ---------- Crypto imports ----------
+# 🔐 Commit-Reveal
+from entropy.commit_reveal import create_commit, reveal_commit, verify_commit, mark_commit_used
+
+# 🔐 Crypto
 from crypto.aes_gcm import encrypt_message
 from crypto.key_derivation import derive_aes_key
 
@@ -26,64 +22,17 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # demo only
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ======================================================
-# CHAT STORAGE (ROOM-BASED)
+# CHAT STORAGE
 # ======================================================
-# roomId -> list of messages
+
 CHAT_ROOMS = {}
-
-# ======================================================
-# ENTROPY SETUP (SESSION-LEVEL)
-# ======================================================
-
-VIDEO_PATH = "../data/video/North.mp4"
-
-frames = load_video_frames(VIDEO_PATH, target_fps=5)
-frames = preprocess_frames(frames)
-features = extract_motion_features(frames)
-entropy_windows = compute_entropy_windows(features)
-entropy_blocks = condition_entropy(entropy_windows)
-
-entropy_index = 0
-TOTAL_BLOCKS = len(entropy_blocks)
-
-# -------- Entropy Metadata --------
-ENTROPY_SOURCE = "Traffic video motion features"
-ENTROPY_BITS_PER_BLOCK = len(entropy_blocks[0]) * 8
-ESTIMATED_MIN_ENTROPY = int(ENTROPY_BITS_PER_BLOCK * 0.98)
-
-# Already validated offline
-NIST_SP_800_22_STATUS = "PASS"
-
-print(f"[INIT] Entropy blocks loaded     : {TOTAL_BLOCKS}")
-print(f"[INIT] Entropy per block         : {ENTROPY_BITS_PER_BLOCK} bits")
-print(f"[INIT] NIST SP 800-22 compliance : {NIST_SP_800_22_STATUS}")
-
-# ======================================================
-# ENTROPY METRIC FUNCTIONS
-# ======================================================
-
-def shannon_entropy(data):
-    counts = Counter(data)
-    total = len(data)
-    entropy = 0.0
-    for count in counts.values():
-        p = count / total
-        entropy -= p * math.log2(p)
-    return entropy
-
-
-def min_entropy(data):
-    counts = Counter(data)
-    total = len(data)
-    max_p = max(count / total for count in counts.values())
-    return -math.log2(max_p)
 
 # ======================================================
 # MODELS
@@ -93,36 +42,95 @@ class MessageRequest(BaseModel):
     roomId: str
     senderId: str
     message: str
+    commit_id: str | None = None
 
 # ======================================================
-# SEND MESSAGE (CRYPTO + ENTROPY EVENT)
+# COMMIT ENDPOINT
+# ======================================================
+
+@app.post("/commit")
+def commit_entropy():
+    commit_id, commit_hash = create_commit()
+    return {"commit_id": commit_id, "commit_hash": commit_hash}
+
+# ======================================================
+# REVEAL ENDPOINT
+# ======================================================
+
+@app.get("/reveal/{commit_id}")
+def reveal_entropy(commit_id: str):
+    data = reveal_commit(commit_id)
+
+    if not data:
+        raise HTTPException(400, "Invalid or expired commit ID")
+
+    return data
+
+# ======================================================
+# VERIFY ENDPOINT
+# ======================================================
+
+@app.post("/verify")
+def verify_entropy(entropy: str, secret: str, commit: str):
+    valid = verify_commit(entropy, secret, commit)
+    return {"valid": valid}
+
+# ======================================================
+# SEND MESSAGE
 # ======================================================
 
 @app.post("/send_message")
 def send_message(req: MessageRequest):
-    global entropy_index
 
-    if entropy_index >= TOTAL_BLOCKS:
-        raise HTTPException(503, "Entropy exhausted")
+    # ==================================================
+    # ENTROPY SELECTION
+    # ==================================================
 
-    # ---------- Entropy Consumption ----------
-    raw_entropy = entropy_blocks[entropy_index]
-    entropy_index += 1
-    entropy_bytes = np.array(raw_entropy).tobytes()
+    if req.commit_id:
+        data = reveal_commit(req.commit_id)
 
-    # ---------- Measured Entropy Metrics ----------
-    measured_shannon = shannon_entropy(raw_entropy)
-    measured_min = min_entropy(raw_entropy)
+        if not data:
+            raise HTTPException(400, "Invalid commit ID or expired")
 
-    # ---------- Key Derivation ----------
-    key = derive_aes_key(entropy_bytes)
+        entropy_hex = data["entropy"]
+        secret = data["secret"]
+        commit_hash = data["commit"]
+
+        # Verify integrity
+        if not verify_commit(entropy_hex, secret, commit_hash):
+            raise HTTPException(400, "Commit verification failed")
+
+        print("[Commit-Reveal] Using VERIFIED committed entropy")
+
+        # 🔥 Mark as used (prevents replay)
+        mark_commit_used(req.commit_id)
+
+    else:
+        entropy_hex = mix_entropy()
+        print("[Commit-Reveal] Using LIVE entropy")
+
+    # ==================================================
+    # KEY GENERATION
+    # ==================================================
+
+    entropy_bytes = bytes.fromhex(entropy_hex)
+    combined_entropy = hashlib.sha256(entropy_bytes).digest()
+
+    key = derive_aes_key(combined_entropy)
+
     full_key_hash = hashlib.sha256(key).hexdigest()
     key_fingerprint = full_key_hash[:16]
 
-    # ---------- Encryption ----------
+    # ==================================================
+    # ENCRYPTION
+    # ==================================================
+
     nonce, ciphertext = encrypt_message(key, req.message)
 
-    # ---------- Store message ----------
+    # ==================================================
+    # STORE MESSAGE
+    # ==================================================
+
     CHAT_ROOMS.setdefault(req.roomId, []).append({
         "sender": req.senderId,
         "text": req.message,
@@ -130,38 +138,41 @@ def send_message(req: MessageRequest):
     })
 
     # ==================================================
-    # 🔐 DEMO-GRADE CRYPTO + ENTROPY AUDIT LOG
+    # LOGGING
     # ==================================================
+
     print("\n" + "=" * 92)
-    print("[EntropyLane] 🔐 MESSAGE ENCRYPTED USING PHYSICAL-WORLD ENTROPY")
+    print("[EntropyLane] 🔐 HYBRID ENTROPY ENCRYPTION")
     print(f"[Room]        : {req.roomId}")
     print(f"[Sender]      : {req.senderId}")
     print("-" * 92)
 
     print("[Entropy]")
-    print(f"  Source                     : {ENTROPY_SOURCE}")
-    print(f"  Block Index Used           : {entropy_index - 1}")
-    print(f"  Entropy Size               : {ENTROPY_BITS_PER_BLOCK} bits")
-    print(f"  Shannon Entropy (measured) : {measured_shannon:.4f} bits")
-    print(f"  Min-Entropy (measured)     : {measured_min:.4f} bits")
-    print(f"  Estimated Min-Entropy      : ~{ESTIMATED_MIN_ENTROPY} bits")
-    print(f"  NIST SP 800-22 Status      : {NIST_SP_800_22_STATUS}")
+    print("  Source        : Multi-source live system")
+    print("  Components    : Traffic + Quantum + Wiki + CPU Jitter")
+    print(f"  Mode          : {'Commit-Reveal' if req.commit_id else 'Live'}")
 
     print("-" * 92)
 
     print("[Cryptography]")
-    print(f"  Algorithm                  : AES-256-GCM")
-    print(f"  Key Hash (SHA-256)         : {full_key_hash}")
-    print(f"  Key Fingerprint            : {key_fingerprint}")
-    print(f"  Nonce (hex)                : {nonce.hex()}")
-    print(f"  Ciphertext (hex)           : {ciphertext.hex()}")
+    print("  Algorithm     : AES-256-GCM")
+    print(f"  Key Hash      : {full_key_hash}")
+    print(f"  Fingerprint   : {key_fingerprint}")
+    print(f"  Nonce         : {nonce.hex()}")
+    print(f"  Ciphertext    : {ciphertext.hex()}")
 
     print("=" * 92 + "\n")
 
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "mode": "commit-reveal" if req.commit_id else "live",
+        "encrypted": ciphertext.hex(),
+        "nonce": nonce.hex(),
+        "key_fingerprint": key_fingerprint
+    }
 
 # ======================================================
-# RECEIVE MESSAGE (NO LOGGING)
+# RECEIVE MESSAGE
 # ======================================================
 
 @app.get("/receive_message")

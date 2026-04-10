@@ -1,5 +1,5 @@
-from entropy.video_loader import load_video_frames
-from entropy.frame_preprocess import preprocess_frames
+from backend.entropy.video_loader import load_video_frames
+from backend.entropy.frame_preprocess import preprocess_frames
 
 frames = load_video_frames("../data/video/North.mp4", target_fps=5)
 processed = preprocess_frames(frames)

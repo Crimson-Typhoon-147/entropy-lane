@@ -1,9 +1,9 @@
-from entropy.video_loader import load_video_frames
-from entropy.frame_preprocess import preprocess_frames
-from entropy.feature_extract import extract_motion_features
-from entropy.window_entropy import compute_entropy_windows
+from backend.entropy.video_loader import load_video_frames
+from backend.entropy.frame_preprocess import preprocess_frames
+from backend.entropy.feature_extract import extract_motion_features
+from backend.entropy.window_entropy import compute_entropy_windows
 
-frames = load_video_frames("../data/video/North.mp4", target_fps=5)
+frames = load_video_frames(target_fps=5)
 frames = preprocess_frames(frames)
 features = extract_motion_features(frames)
 
