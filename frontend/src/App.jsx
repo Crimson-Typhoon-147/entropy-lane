@@ -1,13 +1,13 @@
+// App.jsx
 import ChatWindow from "./components/ChatWindow";
-import SecurityPanel from "./components/SecurityPanel";
-import "./styles.css";
+// REMOVE: import SecurityPanel from "./components/SecurityPanel";
+import "./App.css"; // CHANGE THIS from "./styles.css"
 
 function App() {
   return (
-    <div className="app-container">
-      <ChatWindow />
-      <SecurityPanel />
-    </div>
+    // Change className to match the root styles in App.css if needed, 
+    // but the ID #root is already handled.
+    <ChatWindow /> 
   );
 }
 

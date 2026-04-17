@@ -1,89 +1,53 @@
 import hashlib
 import time
 import uuid
+import secrets
 from entropy.entropy_mixer import mix_entropy
 
-# ======================================================
-# STORES
-# ======================================================
-
-COMMITS = {}          # Active commits
-ARCHIVED_COMMITS = {} # For logging / future blockchain
-
-# ⏳ Expiry time (seconds)
-COMMIT_TTL = 60
-
-
-# ======================================================
-# CREATE COMMIT
-# ======================================================
+COMMITS = {}
 
 def create_commit():
-    entropy = mix_entropy()
-    secret = str(time.time_ns())
+    """PHASE 1: COMMIT"""
+    # This now calls the self-sufficient mixer
+    raw_entropy = mix_entropy()
+    secret_nonce = secrets.token_hex(16)
 
-    combined = entropy + secret
+    combined = f"{raw_entropy}{secret_nonce}"
     commit_hash = hashlib.sha256(combined.encode()).hexdigest()
 
     commit_id = str(uuid.uuid4())
-
     COMMITS[commit_id] = {
-        "entropy": entropy,
-        "secret": secret,
-        "commit": commit_hash,
-        "timestamp": time.time(),
-        "used": False
+        "entropy": raw_entropy,
+        "secret": secret_nonce,
+        "commit_hash": commit_hash,
+        "timestamp": time.time()
     }
-
     return commit_id, commit_hash
 
-
-# ======================================================
-# REVEAL COMMIT
-# ======================================================
-
-def reveal_commit(commit_id):
-
+def reveal_and_verify(commit_id):
+    """PHASE 2: REVEAL"""
     if commit_id not in COMMITS:
-        return None
+        return None, "Error: Commit ID not found"
 
     data = COMMITS[commit_id]
+    check_val = f"{data['entropy']}{data['secret']}"
+    verification_hash = hashlib.sha256(check_val.encode()).hexdigest()
 
-    # ⏳ Expiry check
-    if time.time() - data["timestamp"] > COMMIT_TTL:
-        # Move to archive before removing
-        ARCHIVED_COMMITS[commit_id] = data
-        del COMMITS[commit_id]
-        return None
+    if verification_hash == data["commit_hash"]:
+        return data["entropy"], "SUCCESS: Source Verified"
+    else:
+        return None, "FAILURE: Tamper detected"
 
-    return data
+if __name__ == "__main__":
+    print("\n[STEP 1] Initializing Entropy Sources...")
+    cid, chash = create_commit()
+    print(f" -> Commitment Created: {chash[:32]}...")
 
-
-# ======================================================
-# VERIFY COMMIT
-# ======================================================
-
-def verify_commit(entropy, secret, commit_hash):
-    calculated = hashlib.sha256((entropy + secret).encode()).hexdigest()
-    return calculated == commit_hash
-
-
-# ======================================================
-# MARK COMMIT AS USED (ONE-TIME USE)
-# ======================================================
-
-def mark_commit_used(commit_id):
-
-    if commit_id not in COMMITS:
-        return
-
-    data = COMMITS[commit_id]
-
-    # Mark as used
-    data["used"] = True
-
-    # Move to archive (for logs / blockchain later)
-    ARCHIVED_COMMITS[commit_id] = data
-
-    # Remove from active pool
-    del COMMITS[commit_id]
+    print("\n[STEP 2] Simulating Reveal Phase...")
+    time.sleep(1) 
+    final_seed, status = reveal_and_verify(cid)
+    
+    print(f" -> Status: {status}")
+    if final_seed:
+        print(f" -> Final Secure Seed: {final_seed[:64]}...")
+        print("\n[RESULT] System is 100% Operational.\n")

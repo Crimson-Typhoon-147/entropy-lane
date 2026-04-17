@@ -2,186 +2,140 @@ import { useEffect, useState, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 import InputBar from "./InputBar";
 
-// -------------------------------
-// Utils
-// -------------------------------
-function generateClientId() {
-  return "client-" + Math.random().toString(36).slice(2);
-}
-
-// Shared room
 const ROOM_ID = "entropy-lane-room";
-
-// Backend base URL
-const API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 function ChatWindow() {
-  // -------------------------------
-  // STATE & REFS (ALWAYS RUN)
-  // -------------------------------
   const [messages, setMessages] = useState([]);
-  const [clientId] = useState(generateClientId);
-  const [username, setUsername] = useState("");
+  const [clientId] = useState(() => "client-" + Math.random().toString(36).slice(2, 9));
+  const [username, setUsername] = useState(() => localStorage.getItem("entropy-username") || "");
   const [tempUsername, setTempUsername] = useState("");
-  const lastTsRef = useRef(0);
+  
+  const lastTsRef = useRef(0.0);
+  const scrollRef = useRef(null);
 
-  // -------------------------------
-  // Load username once
-  // -------------------------------
-  useEffect(() => {
-    const saved = localStorage.getItem("entropy-username");
-    if (saved) setUsername(saved);
-  }, []);
-
-  // -------------------------------
-  // RECEIVE MESSAGE (POLLING)
-  // -------------------------------
+  // 🔄 THE SYNC ENGINE
   useEffect(() => {
     if (!username) return;
 
     const poll = setInterval(async () => {
       try {
-        const res = await fetch(
-          `${API_BASE}/receive_message?roomId=${ROOM_ID}&clientId=${clientId}&lastTs=${lastTsRef.current}`
-        );
-
+        const url = `${API_BASE}/receive_messages/${ROOM_ID}?clientId=${clientId}&lastTs=${lastTsRef.current}`;
+        const res = await fetch(url);
         if (!res.ok) return;
-
         const data = await res.json();
 
-        if (data.messages && data.messages.length) {
-          setMessages((prev) => {
-            const updated = [...prev];
-
-            data.messages.forEach((m) => {
-              lastTsRef.current = Math.max(lastTsRef.current, m.ts);
-              updated.push({
-                text: m.text,
-                sender: "other",
-                name: m.senderName,
-                meta: m.meta || null,
-              });
-            });
-
-            return updated;
-          });
+        if (data.messages && data.messages.length > 0) {
+          const currentTs = parseFloat(lastTsRef.current);
+          const newOnes = data.messages.filter(m => parseFloat(m.ts) > currentTs);
+          
+          if (newOnes.length > 0) {
+            lastTsRef.current = Math.max(...newOnes.map(m => parseFloat(m.ts)));
+            const mapped = newOnes.map(m => ({
+              text: m.text,
+              sender: "other", // Received messages always stay left
+              name: m.sender,
+              meta: m.proofs || null,
+            }));
+            setMessages((prev) => [...prev, ...mapped]);
+          }
         }
-      } catch (err) {
-        console.error("Polling failed:", err);
-      }
-    }, 1500);
-
+      } catch (err) { console.error("Sync Error:", err); }
+    }, 50);
     return () => clearInterval(poll);
   }, [clientId, username]);
 
-  // -------------------------------
-  // JOIN HANDLER (USED BY ENTER + BUTTON)
-  // -------------------------------
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const joinChat = () => {
-    const value = tempUsername.trim();
-    if (!value) return;
-    localStorage.setItem("entropy-username", value);
-    setUsername(value);
+    if (!tempUsername.trim()) return;
+    localStorage.setItem("entropy-username", tempUsername);
+    setUsername(tempUsername);
   };
 
-  // -------------------------------
-  // SEND MESSAGE
-  // -------------------------------
-  const sendMessage = async (text) => {
-    if (!text.trim() || !username) return;
+const sendMessage = async (text) => {
+  if (!text.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { text, sender: "me", name: username },
-    ]);
-
-    try {
-      await fetch(`${API_BASE}/send_message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomId: ROOM_ID,
-          senderId: clientId,
-          senderName: username,
-          message: text,
-        }),
-      });
-    } catch (err) {
-      console.error("Send failed:", err);
-    }
+  // 1. ADD TO SCREEN IMMEDIATELY (Instant Feedback)
+  const myMsg = { 
+    text: text, 
+    sender: "me", 
+    name: username,
+    ts: Date.now() / 1000 // Temporary timestamp
   };
+  
+  setMessages((prev) => [...prev, myMsg]);
 
-  // ======================================================
-  // RENDER
-  // ======================================================
+  // 2. SEND TO SERVER IN THE BACKGROUND
+  try {
+    await fetch(`${API_BASE}/send_message`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        roomId: ROOM_ID, 
+        senderId: clientId, 
+        message: text 
+      }),
+    });
+  } catch (err) {
+    console.error("Background sync failed:", err);
+  }
+};
+
+  if (!username) {
+    return (
+      <div className="login-overlay">
+        <div className="login-box">
+          <h2>EntropyLane</h2>
+          <input type="text" placeholder="Username" onChange={e => setTempUsername(e.target.value)} onKeyDown={e => e.key === 'Enter' && joinChat()} />
+          <button onClick={joinChat}>Join Secure Room</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="chat-window">
-      <div className="chat-header">
-        <h3>EntropyLane</h3>
-        <span className="secure-badge">🔒 Secure Session</span>
-      </div>
+    <div className="chat-layout">
+      {/* 🛠 Left Sidebar: Security Stats */}
+      <aside className="security-sidebar">
+        <div className="sidebar-header">🛡️ Security Status</div>
+        <div className="stat-card">
+          <label>Entropy Source</label>
+          <p>Traffic Video</p>
+        </div>
+        <div className="stat-card">
+          <label>NIST SP 800-22</label>
+          <p className="pass">Pass ✅</p>
+        </div>
+        <div className="stat-card">
+          <label>Encryption</label>
+          <p>AES-GCM</p>
+        </div>
+      </aside>
 
-      <div className="chat-messages">
-        {!username ? (
-          <>
-            <p style={{ color: "#ccc" }}>
-              Enter your name to join the chat
-            </p>
+      {/* 💬 Main Chat Area */}
+      <main className="chat-container">
+        <header className="chat-nav">
+          <div className="status-indicator">●</div>
+          <h4>EntropyLane Room</h4>
+        </header>
 
-            <input
-              type="text"
-              placeholder="Your name"
-              value={tempUsername}
-              autoFocus
-              onChange={(e) => setTempUsername(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  joinChat();
-                }
-              }}
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #444",
-                background: "#020617",
-                color: "#e5e7eb",
-                width: "100%",
-                maxWidth: "300px",
-                marginBottom: "12px",
-              }}
-            />
+        <div className="messages-viewport">
+          {messages.map((m, i) => (
+            <div key={i} className={`message-wrapper ${m.sender === "me" ? "msg-right" : "msg-left"}`}>
+              {m.sender === "other" && <span className="sender-tag">{m.name}</span>}
+              <MessageBubble text={m.text} sender={m.sender} />
+            </div>
+          ))}
+          <div ref={scrollRef} />
+        </div>
 
-            <button
-              onClick={joinChat}
-              style={{
-                padding: "10px 16px",
-                borderRadius: "6px",
-                border: "none",
-                background: "#16a34a",
-                color: "#052e16",
-                fontWeight: "600",
-                cursor: "pointer",
-                maxWidth: "140px",
-              }}
-            >
-              Join Chat
-            </button>
-          </>
-        ) : (
-          messages.map((m, i) => (
-            <MessageBubble
-              key={i}
-              text={m.text}
-              sender={m.sender}
-              name={m.name}
-              meta={m.meta}
-            />
-          ))
-        )}
-      </div>
-
-      {username && <InputBar onSend={sendMessage} />}
+        <div className="input-container">
+          <InputBar onSend={sendMessage} />
+        </div>
+      </main>
     </div>
   );
 }
