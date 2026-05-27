@@ -242,3 +242,9 @@ Multi-source entropy fusion
 Distributed entropy collection
 
 Extended cryptographic evaluation
+
+
+## License
+This project is licensed under the AGPL-3.0 License.
+Commercial use requires explicit written permission from the author.
+See [LICENSE](LICENSE) for details.
